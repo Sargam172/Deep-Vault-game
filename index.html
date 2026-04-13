@@ -52,8 +52,18 @@ AFRAME.registerComponent('gaze-dwell', {
 }
 html,body{width:100%;height:100%;overflow:hidden;background:var(--dark);font-family:var(--font-d);}
 
-/* ── CANVAS ── */
-#gameCanvas{display:block;width:100%;height:100%;cursor:none;}
+<style>
+#gameCanvas{
+  display:block;
+  width:100vw;
+  height:100dvh;
+  cursor:none;
+  touch-action:none;
+  position:fixed;
+  top:0;
+  left:0;
+}
+</style>
 
 /* ── HUD OVERLAY ── */
 #hud{
@@ -173,7 +183,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--dark);font-fam
      a flat plane in front of the camera, giving true stereoscopic
      side-by-side rendering via A-Frame / WebXR.             ═══ -->
 <a-scene id="aframeScene"
-  style="display:none;position:fixed;inset:0;z-index:5;"
+  style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;"
   embedded
   vr-mode-ui="enabled:true"
   renderer="antialias:true; colorManagement:true"
@@ -186,11 +196,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--dark);font-fam
     </a-entity>
   </a-entity>
 
-  <!-- The game canvas is projected onto this plane, filling each eye -->
   <a-plane class="game-plane"
     id="gamePlane"
-    position="0 0 -2"
-    width="3.55" height="2"
+    position="0 0 -1.6"
+    width="2.4"
+    height="1.35"
     canvas-texture="canvasId:gameCanvas"
     material="shader:flat; src:#gameCanvas; color:#ffffff; side:front"
     look-at="[camera]">
@@ -198,7 +208,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--dark);font-fam
 
   <a-light type="ambient" color="#ffffff" intensity="1"></a-light>
 </a-scene>
-
+   
 <!-- ═══ FLASH SCREEN ═══ -->
 <div class="screen" id="flashScreen">
   <div class="screen-icon">🌊</div>
@@ -370,13 +380,41 @@ const ctx    = canvas.getContext('2d');
 
 // ── Resize ──────────────────────────────────
 let W, H;
-function resize(){
-  W = canvas.width  = window.innerWidth;
-  H = canvas.height = window.innerHeight;
+
+function resize() {
+  const vh = window.visualViewport
+    ? window.visualViewport.height
+    : window.innerHeight;
+
+  const vw = window.visualViewport
+    ? window.visualViewport.width
+    : window.innerWidth;
+
+  W = canvas.width = vw;
+  H = canvas.height = vh;
+
+  canvas.style.width = vw + "px";
+  canvas.style.height = vh + "px";
 }
-window.addEventListener('resize', resize);
+
+window.addEventListener("resize", resize);
+
+window.addEventListener("orientationchange", () => {
+  setTimeout(resize, 300);
+});
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", resize);
+}
+
 resize();
 
+
+if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+  G.mx = window.innerWidth / 2;
+  G.my = window.innerHeight / 2;
+}
+  
 // ── State ────────────────────────────────────
 const G = {
   running:    false,
